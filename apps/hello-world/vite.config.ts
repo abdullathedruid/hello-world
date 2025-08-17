@@ -1,12 +1,8 @@
 /// <reference types='vitest' />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin'
 
 export default defineConfig({
-  root: __dirname,
-  cacheDir: '../../node_modules/.vite/apps/hello-world',
-  
   server: {
     port: 4200,
     host: 'localhost',
@@ -17,10 +13,10 @@ export default defineConfig({
     host: 'localhost',
   },
 
-  plugins: [react(), nxViteTsPaths()],
+  plugins: [react()],
 
   build: {
-    outDir: '../../dist/apps/hello-world',
+    outDir: 'dist',
     reportCompressedSize: true,
     commonjsOptions: {
       transformMixedEsModules: true,
@@ -29,15 +25,11 @@ export default defineConfig({
 
   test: {
     globals: true,
-    cache: {
-      dir: '../../node_modules/.vitest',
-    },
     environment: 'jsdom',
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     
     reporters: ['default'],
     coverage: {
-      reportsDirectory: '../../coverage/apps/hello-world',
       provider: 'v8',
     },
   },
