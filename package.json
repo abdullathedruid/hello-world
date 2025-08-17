@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "nx build hello-world",
+    "build": "pnpm exec nx build hello-world",
     "dev": "nx serve hello-world",
     "lint": "nx lint hello-world",
     "preview": "nx preview hello-world",
