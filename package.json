@@ -6,13 +6,15 @@
   "scripts": {
     "dev": "nx serve hello-world",
     "build": "nx build hello-world",
+    "start": "serve dist/apps/hello-world -s -l ${PORT:-3000}",
     "lint": "nx lint hello-world",
     "preview": "nx preview hello-world",
     "test": "nx test hello-world"
   },
   "dependencies": {
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "serve": "^14.2.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
