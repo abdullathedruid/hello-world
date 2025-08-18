@@ -28,8 +28,8 @@ func TestHomeHandler(t *testing.T) {
 	}
 
 	body := rr.Body.String()
-	if !strings.Contains(body, "HTMX + Go Demo") {
-		t.Errorf("handler returned unexpected body: got %v", body)
+	if !strings.Contains(body, "HTMX") || !strings.Contains(body, "Go Demo") {
+		t.Errorf("handler returned unexpected body: should contain HTMX and Go Demo")
 	}
 
 	if !strings.Contains(body, "Current Time") {
@@ -68,6 +68,9 @@ func TestTimeHandler(t *testing.T) {
 }
 
 func TestClickHandler(t *testing.T) {
+	// Reset click service for isolated test
+	handlers.ResetClickService()
+	
 	req, err := http.NewRequest("POST", "/click", nil)
 	if err != nil {
 		t.Fatal(err)

@@ -11,6 +11,11 @@ import (
 
 var clickService = services.NewClickService()
 
+// ResetClickService resets the click counter for testing
+func ResetClickService() {
+	clickService.Reset()
+}
+
 func TimeFragmentHandler(w http.ResponseWriter, r *http.Request) {
 	logrus.Info("Time endpoint accessed")
 	currentTime := time.Now().Format("2006-01-02 15:04:05")

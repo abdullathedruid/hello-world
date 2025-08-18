@@ -16,3 +16,7 @@ func (s *ClickService) IncrementClick() int {
 func (s *ClickService) GetCount() int {
 	return clickCount
 }
+
+func (s *ClickService) Reset() {
+	clickCount = 0
+}
