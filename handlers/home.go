@@ -14,12 +14,12 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	
+
 	data := struct {
 		Title string
 	}{
 		Title: "HTMX + Go Demo",
 	}
-	
+
 	tmpl.Execute(w, data)
 }
