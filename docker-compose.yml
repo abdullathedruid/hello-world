@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  app:
+    image: ghcr.io/abdullathedruid/hello-world:latest
+    ports:
+      - "8080:8080"
+    environment:
+      - ENV=production
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
