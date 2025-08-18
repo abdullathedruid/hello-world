@@ -63,6 +63,13 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
             </div>
         </div>
     </div>
+
+    <script type="module">
+        import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk'
+        
+        // After your app is fully loaded and ready to display
+        await sdk.actions.ready()
+    </script>
 </body>
 </html>`
 	
@@ -91,3 +98,4 @@ func clickHandler(w http.ResponseWriter, r *http.Request) {
 		        hx-post="/click" hx-target="#click-counter">Click Me Again!</button>
 	</div>`, clickCount)
 }
+
