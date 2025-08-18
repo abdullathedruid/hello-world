@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 )
 
 type PageData struct {
@@ -14,14 +16,23 @@ type PageData struct {
 }
 
 func main() {
-	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/time", timeHandler)
-	http.HandleFunc("/click", clickHandler)
+	// Configure logrus
+	logrus.SetFormatter(&logrus.JSONFormatter{})
+	logrus.SetLevel(logrus.InfoLevel)
 	
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
+	// Create router
+	r := mux.NewRouter()
 	
-	fmt.Println("Server starting on http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	// Routes
+	r.HandleFunc("/", homeHandler).Methods("GET")
+	r.HandleFunc("/time", timeHandler).Methods("GET")
+	r.HandleFunc("/click", clickHandler).Methods("POST")
+	
+	// Static files
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
+	
+	logrus.Info("Server starting on http://localhost:8080")
+	logrus.Fatal(http.ListenAndServe(":8080", r))
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -60,6 +71,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func timeHandler(w http.ResponseWriter, r *http.Request) {
+	logrus.Info("Time endpoint accessed")
 	currentTime := time.Now().Format("2006-01-02 15:04:05")
 	fmt.Fprintf(w, `<div class="bg-blue-50 border border-blue-200 rounded-md p-4">
 		<p class="text-gray-700">Current time: <strong class="text-blue-600">%s</strong></p>
@@ -72,6 +84,7 @@ var clickCount = 0
 
 func clickHandler(w http.ResponseWriter, r *http.Request) {
 	clickCount++
+	logrus.WithField("count", clickCount).Info("Button clicked")
 	fmt.Fprintf(w, `<div class="bg-green-50 border border-green-200 rounded-md p-4">
 		<p class="text-gray-700">Button clicked <strong class="text-green-600">%d</strong> times!</p>
 		<button class="mt-3 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-200" 

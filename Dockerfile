@@ -17,9 +17,15 @@ COPY src/ ./src/
 RUN mkdir -p static && npm run build-css
 
 # Build stage for Go
-FROM golang:1.21-alpine AS go-builder
+FROM golang:1.24-alpine AS go-builder
 
 WORKDIR /app
+
+# Copy go module files
+COPY go.mod go.sum ./
+
+# Download dependencies (if any)
+RUN go mod download
 
 # Copy go source
 COPY main.go ./
