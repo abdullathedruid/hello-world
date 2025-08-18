@@ -15,7 +15,7 @@ COPY tailwind.config.js ./
 COPY src/ ./src/
 
 # Create static directory and build CSS
-RUN mkdir -p static && npm run build-css
+RUN mkdir -p static/css && npm run build-css
 
 # Build stage for Go
 FROM golang:1.24-alpine AS go-builder
@@ -29,8 +29,14 @@ COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
-# Copy go source
+# Copy go source files
 COPY main.go ./
+COPY config/ ./config/
+COPY handlers/ ./handlers/
+COPY middleware/ ./middleware/
+COPY models/ ./models/
+COPY routes/ ./routes/
+COPY services/ ./services/
 
 # Build the Go application with cache mount
 RUN --mount=type=cache,target=/go/pkg/mod \
@@ -50,6 +56,9 @@ COPY --from=go-builder /app/main .
 
 # Copy static files from CSS build stage
 COPY --from=css-builder /app/static ./static/
+
+# Copy template files
+COPY templates/ ./templates/
 
 # Expose port
 EXPOSE 8080
