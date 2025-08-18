@@ -1,0 +1,13 @@
+{{define "navbar"}}
+<nav class="bg-blue-600 text-white p-4">
+    <div class="container mx-auto flex justify-between items-center">
+        <h1 class="text-xl font-bold">
+            <a href="/" hx-boost="true">My App</a>
+        </h1>
+        <div class="space-x-4">
+            <a href="/" hx-boost="true" class="hover:text-blue-200">Home</a>
+            <a href="/dashboard" hx-boost="true" class="hover:text-blue-200">Dashboard</a>
+        </div>
+    </div>
+</nav>
+{{end}}
