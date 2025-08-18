@@ -70,7 +70,7 @@ func TestTimeHandler(t *testing.T) {
 func TestClickHandler(t *testing.T) {
 	// Reset click service for isolated test
 	handlers.ResetClickService()
-	
+
 	req, err := http.NewRequest("POST", "/click", nil)
 	if err != nil {
 		t.Fatal(err)

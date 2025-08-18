@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"hello-world/services"
+
+	"github.com/sirupsen/logrus"
 )
 
 var clickService = services.NewClickService()
