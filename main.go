@@ -19,19 +19,19 @@ func main() {
 	// Configure logrus
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 	logrus.SetLevel(logrus.InfoLevel)
-	
+
 	// Create router
 	r := mux.NewRouter()
-	
+
 	// Routes
 	r.HandleFunc("/", homeHandler).Methods("GET")
 	r.HandleFunc("/debug", debugHandler).Methods("GET")
 	r.HandleFunc("/time", timeHandler).Methods("GET")
 	r.HandleFunc("/click", clickHandler).Methods("POST")
-	
+
 	// Static files
 	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
-	
+
 	logrus.Info("Server starting on http://localhost:8080")
 	logrus.Fatal(http.ListenAndServe(":8080", r))
 }
@@ -81,7 +81,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
     </script>
 </body>
 </html>`
-	
+
 	t, _ := template.New("home").Parse(tmpl)
 	t.Execute(w, nil)
 }
@@ -292,4 +292,3 @@ Loading SDK data...
 	t, _ := template.New("debug").Parse(tmpl)
 	t.Execute(w, nil)
 }
-
