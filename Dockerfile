@@ -6,8 +6,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install dependencies with cache mount
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 # Copy Tailwind config and source files
 COPY tailwind.config.js ./
@@ -24,14 +25,17 @@ WORKDIR /app
 # Copy go module files
 COPY go.mod go.sum ./
 
-# Download dependencies (if any)
-RUN go mod download
+# Download dependencies with cache mount
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 # Copy go source
 COPY main.go ./
 
-# Build the Go application
-RUN go build -o main .
+# Build the Go application with cache mount
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go build -o main .
 
 # Final stage
 FROM alpine:latest
