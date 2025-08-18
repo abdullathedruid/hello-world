@@ -288,7 +288,7 @@ Loading SDK data...
     </script>
 </body>
 </html>`
-	
+
 	t, _ := template.New("debug").Parse(tmpl)
 	t.Execute(w, nil)
 }
