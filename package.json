@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build-css": "tailwindcss -i ./src/input.css -o ./static/style.css",
+    "build-css": "tailwindcss -i ./src/input.css -o ./static/css/style.css",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
