@@ -1,0 +1,5 @@
+mode: atomic
+hello-world/main.go:18.13,36.2 9 0
+hello-world/main.go:38.58,78.2 3 3
+hello-world/main.go:80.58,88.2 3 13
+hello-world/main.go:92.59,100.2 3 5

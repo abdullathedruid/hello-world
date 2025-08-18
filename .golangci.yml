@@ -1,0 +1,36 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters-settings:
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: hello-world
+  misspell:
+    locale: US
+  govet:
+    enable-all: true
+  revive:
+    rules:
+      - name: exported
+        disabled: true
+
+linters:
+  enable:
+    - gofmt
+    - goimports
+    - govet
+    - misspell
+    - revive
+    - staticcheck
+    - unused
+    - ineffassign
+    - gosimple
+
+issues:
+  exclude-use-default: false
+  exclude:
+    # Exclude some staticcheck messages
+    - "SA9003:"
+    - "ST1000:"
