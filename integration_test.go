@@ -8,16 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gorilla/mux"
+	"hello-world/routes"
 )
 
 func TestFullServerIntegration(t *testing.T) {
 	// Create router with all routes
-	r := mux.NewRouter()
-	r.HandleFunc("/", homeHandler).Methods("GET")
-	r.HandleFunc("/debug", debugHandler).Methods("GET")
-	r.HandleFunc("/time", timeHandler).Methods("GET")
-	r.HandleFunc("/click", clickHandler).Methods("POST")
+	r := routes.SetupRoutes()
 
 	// Create test server
 	server := httptest.NewServer(r)
@@ -64,7 +60,7 @@ func TestFullServerIntegration(t *testing.T) {
 	}
 
 	// Test time endpoint
-	resp, err = http.Get(server.URL + "/time")
+	resp, err = http.Get(server.URL + "/api/time")
 	if err != nil {
 		t.Fatalf("Failed to get time: %v", err)
 	}
@@ -80,7 +76,7 @@ func TestFullServerIntegration(t *testing.T) {
 	}
 
 	// Test click endpoint
-	resp, err = http.Post(server.URL+"/click", "", nil)
+	resp, err = http.Post(server.URL+"/api/click", "", nil)
 	if err != nil {
 		t.Fatalf("Failed to post to click: %v", err)
 	}
@@ -97,22 +93,16 @@ func TestFullServerIntegration(t *testing.T) {
 }
 
 func TestConcurrentRequests(t *testing.T) {
-	r := mux.NewRouter()
-	r.HandleFunc("/time", timeHandler).Methods("GET")
+	r := routes.SetupRoutes()
 
 	server := httptest.NewServer(r)
 	defer server.Close()
-
-	// Reset click count for concurrent test
-	originalCount := clickCount
-	clickCount = 0
-	defer func() { clickCount = originalCount }()
 
 	// Test concurrent requests
 	done := make(chan bool, 10)
 	for i := 0; i < 10; i++ {
 		go func() {
-			resp, err := http.Get(server.URL + "/time")
+			resp, err := http.Get(server.URL + "/api/time")
 			if err != nil {
 				t.Errorf("Concurrent request failed: %v", err)
 			} else {
