@@ -2,13 +2,12 @@ package handlers
 
 import (
 	"html/template"
+	"log/slog"
 	"net/http"
-
-	"github.com/sirupsen/logrus"
 )
 
 func DebugHandler(w http.ResponseWriter, r *http.Request) {
-	logrus.Info("Debug page accessed")
+	slog.Info("Debug page accessed")
 	tmpl, err := template.ParseFiles(
 		"templates/layouts/base.html",
 		"templates/pages/debug.html",
