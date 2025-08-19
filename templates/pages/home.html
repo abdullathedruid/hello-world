@@ -42,27 +42,11 @@
         </div>
     </div>
     
-    <!-- Mobile platform indicator (visible only on small screens) -->
-    <div class="mt-6 p-3 bg-gray-50 rounded-lg text-center text-xs text-gray-500 sm:hidden" id="mobile-info">
-        <span id="platform-indicator">Loading platform info...</span>
-    </div>
 </div>
 
 <script>
     // Add mobile-specific enhancements
     document.addEventListener('DOMContentLoaded', function() {
-        // Update platform indicator for mobile
-        function updatePlatformInfo() {
-            const indicator = document.getElementById('platform-indicator');
-            if (indicator) {
-                const viewport = `${window.innerWidth}×${window.innerHeight}`;
-                const platform = window.navigator.platform;
-                indicator.textContent = `${platform} • ${viewport}`;
-            }
-        }
-        
-        updatePlatformInfo();
-        window.addEventListener('resize', updatePlatformInfo);
         
         // Add touch feedback for buttons
         const buttons = document.querySelectorAll('button, a');
