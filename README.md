@@ -31,6 +31,43 @@ go build
 - ✅ Farcaster MiniApp SDK integration
 - ✅ Structured logging with Logrus
 
+## Development Workflow
+
+### Testing & Coverage
+```bash
+# Run all tests
+make test
+
+# Run tests with coverage
+make test-coverage
+
+# Run benchmarks
+make bench
+```
+
+### Code Quality
+```bash
+# Format code (REQUIRED before creating PRs)
+make fmt
+
+# Check for issues
+make vet
+
+# Run linter if available
+make lint
+
+# Run all checks
+make check
+```
+
+### Before Creating a Pull Request
+**ALWAYS run these commands before creating a PR:**
+```bash
+make fmt        # Format code
+make vet        # Check for issues  
+make test       # Ensure tests pass
+```
+
 ## For Developers
 
 See `ARCHITECTURE.md` for detailed architectural guidelines and LLM instructions.
