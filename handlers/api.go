@@ -2,12 +2,11 @@ package handlers
 
 import (
 	"html/template"
+	"log/slog"
 	"net/http"
 	"time"
 
 	"hello-world/services"
-
-	"github.com/sirupsen/logrus"
 )
 
 var clickService = services.NewClickService()
@@ -18,7 +17,7 @@ func ResetClickService() {
 }
 
 func TimeFragmentHandler(w http.ResponseWriter, r *http.Request) {
-	logrus.Info("Time endpoint accessed")
+	slog.Info("Time endpoint accessed")
 	currentTime := time.Now().Format("2006-01-02 15:04:05")
 
 	tmpl := `<div class="bg-blue-50 border border-blue-200 rounded-md p-4">
@@ -34,7 +33,7 @@ func TimeFragmentHandler(w http.ResponseWriter, r *http.Request) {
 
 func ClickFragmentHandler(w http.ResponseWriter, r *http.Request) {
 	count := clickService.IncrementClick()
-	logrus.WithField("count", count).Info("Button clicked")
+	slog.Info("Button clicked", "count", count)
 
 	tmpl := `<div class="bg-green-50 border border-green-200 rounded-md p-4">
 		<p class="text-gray-700">Button clicked <strong class="text-green-600">{{.Count}}</strong> times!</p>

@@ -1,17 +1,20 @@
 package main
 
 import (
+	"log/slog"
 	"net/http"
+	"os"
 
-	"github.com/sirupsen/logrus"
 	"hello-world/config"
 	"hello-world/routes"
 )
 
 func main() {
-	// Configure logrus
-	logrus.SetFormatter(&logrus.JSONFormatter{})
-	logrus.SetLevel(logrus.InfoLevel)
+	// Configure slog with JSON handler
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+	slog.SetDefault(logger)
 
 	// Load configuration
 	cfg := config.Load()
@@ -19,6 +22,9 @@ func main() {
 	// Setup routes
 	r := routes.SetupRoutes()
 
-	logrus.Info("Server starting on http://localhost:" + cfg.Port)
-	logrus.Fatal(http.ListenAndServe(":"+cfg.Port, r))
+	slog.Info("Server starting", "url", "http://localhost:"+cfg.Port)
+	if err := http.ListenAndServe(":"+cfg.Port, r); err != nil {
+		slog.Error("Server failed to start", "error", err)
+		os.Exit(1)
+	}
 }
