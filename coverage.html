@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>hello-world: Go Coverage Report</title>
+		<title>config: Go Coverage Report</title>
 		<style>
 			body {
 				background: black;
@@ -55,7 +55,21 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">hello-world/main.go (50.0%)</option>
+				<option value="file0">hello-world/config/config.go (100.0%)</option>
+				
+				<option value="file1">hello-world/handlers/api.go (100.0%)</option>
+				
+				<option value="file2">hello-world/handlers/debug.go (71.4%)</option>
+				
+				<option value="file3">hello-world/handlers/home.go (66.7%)</option>
+				
+				<option value="file4">hello-world/main.go (0.0%)</option>
+				
+				<option value="file5">hello-world/middleware/logging.go (100.0%)</option>
+				
+				<option value="file6">hello-world/routes/routes.go (100.0%)</option>
+				
+				<option value="file7">hello-world/services/click_service.go (100.0%)</option>
 				
 				</select>
 			</div>
@@ -69,107 +83,239 @@
 		</div>
 		<div id="content">
 		
-		<pre class="file" id="file0" style="display: none">package main
+		<pre class="file" id="file0" style="display: none">package config
 
 import (
-        "fmt"
+        "os"
+)
+
+type Config struct {
+        Port string
+}
+
+func Load() *Config <span class="cov8" title="1">{
+        port := os.Getenv("PORT")
+        if port == "" </span><span class="cov8" title="1">{
+                port = "8080"
+        }</span>
+
+        <span class="cov8" title="1">return &amp;Config{
+                Port: port,
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package handlers
+
+import (
         "html/template"
         "net/http"
         "time"
 
-        "github.com/gorilla/mux"
+        "hello-world/services"
+
         "github.com/sirupsen/logrus"
 )
 
-type PageData struct {
-        Title string
-        Time  string
+var clickService = services.NewClickService()
+
+// ResetClickService resets the click counter for testing
+func ResetClickService() <span class="cov8" title="1">{
+        clickService.Reset()
+}</span>
+
+func TimeFragmentHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        logrus.Info("Time endpoint accessed")
+        currentTime := time.Now().Format("2006-01-02 15:04:05")
+
+        tmpl := `&lt;div class="bg-blue-50 border border-blue-200 rounded-md p-4"&gt;
+                &lt;p class="text-gray-700"&gt;Current time: &lt;strong class="text-blue-600"&gt;{{.Time}}&lt;/strong&gt;&lt;/p&gt;
+                &lt;button class="mt-3 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200" 
+                        hx-get="/api/time" hx-target="#time-display"&gt;Refresh Time&lt;/button&gt;
+        &lt;/div&gt;`
+
+        t, _ := template.New("time").Parse(tmpl)
+        data := struct{ Time string }{Time: currentTime}
+        t.Execute(w, data)
+}</span>
+
+func ClickFragmentHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        count := clickService.IncrementClick()
+        logrus.WithField("count", count).Info("Button clicked")
+
+        tmpl := `&lt;div class="bg-green-50 border border-green-200 rounded-md p-4"&gt;
+                &lt;p class="text-gray-700"&gt;Button clicked &lt;strong class="text-green-600"&gt;{{.Count}}&lt;/strong&gt; times!&lt;/p&gt;
+                &lt;button class="mt-3 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-200" 
+                        hx-post="/api/click" hx-target="#click-counter"&gt;Click Me Again!&lt;/button&gt;
+        &lt;/div&gt;`
+
+        t, _ := template.New("click").Parse(tmpl)
+        data := struct{ Count int }{Count: count}
+        t.Execute(w, data)
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package handlers
+
+import (
+        "html/template"
+        "net/http"
+
+        "github.com/sirupsen/logrus"
+)
+
+func DebugHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        logrus.Info("Debug page accessed")
+        tmpl, err := template.ParseFiles(
+                "templates/layouts/base.html",
+                "templates/pages/debug.html",
+        )
+        if err != nil </span><span class="cov8" title="1">{
+                http.Error(w, err.Error(), http.StatusInternalServerError)
+                return
+        }</span>
+
+        <span class="cov0" title="0">data := struct {
+                Title string
+        }{
+                Title: "Farcaster MiniApp Debug",
+        }
+
+        tmpl.Execute(w, data)</span>
 }
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package handlers
+
+import (
+        "html/template"
+        "net/http"
+)
+
+func HomeHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        tmpl, err := template.ParseFiles(
+                "templates/layouts/base.html",
+                "templates/pages/home.html",
+        )
+        if err != nil </span><span class="cov8" title="1">{
+                http.Error(w, err.Error(), http.StatusInternalServerError)
+                return
+        }</span>
+
+        <span class="cov0" title="0">data := struct {
+                Title string
+        }{
+                Title: "HTMX + Go Demo",
+        }
+
+        tmpl.Execute(w, data)</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package main
+
+import (
+        "net/http"
+
+        "github.com/sirupsen/logrus"
+        "hello-world/config"
+        "hello-world/routes"
+)
 
 func main() <span class="cov0" title="0">{
         // Configure logrus
         logrus.SetFormatter(&amp;logrus.JSONFormatter{})
         logrus.SetLevel(logrus.InfoLevel)
-        
-        // Create router
+
+        // Load configuration
+        cfg := config.Load()
+
+        // Setup routes
+        r := routes.SetupRoutes()
+
+        logrus.Info("Server starting on http://localhost:" + cfg.Port)
+        logrus.Fatal(http.ListenAndServe(":"+cfg.Port, r))
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package middleware
+
+import (
+        "net/http"
+        "time"
+
+        "github.com/sirupsen/logrus"
+)
+
+func LoggingMiddleware(next http.Handler) http.Handler <span class="cov8" title="1">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
+                start := time.Now()
+
+                next.ServeHTTP(w, r)
+
+                logrus.WithFields(logrus.Fields{
+                        "method":   r.Method,
+                        "path":     r.URL.Path,
+                        "duration": time.Since(start),
+                }).Info("Request processed")
+        }</span>)
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package routes
+
+import (
+        "net/http"
+
+        "github.com/gorilla/mux"
+        "hello-world/handlers"
+        "hello-world/middleware"
+)
+
+func SetupRoutes() *mux.Router <span class="cov8" title="1">{
         r := mux.NewRouter()
-        
-        // Routes
-        r.HandleFunc("/", homeHandler).Methods("GET")
-        r.HandleFunc("/time", timeHandler).Methods("GET")
-        r.HandleFunc("/click", clickHandler).Methods("POST")
-        
+
+        // Apply middleware
+        r.Use(middleware.LoggingMiddleware)
+
+        // Full page routes
+        r.HandleFunc("/", handlers.HomeHandler).Methods("GET")
+        r.HandleFunc("/debug", handlers.DebugHandler).Methods("GET")
+
+        // API routes for HTMX fragments
+        api := r.PathPrefix("/api").Subrouter()
+        api.HandleFunc("/time", handlers.TimeFragmentHandler).Methods("GET")
+        api.HandleFunc("/click", handlers.ClickFragmentHandler).Methods("POST")
+
         // Static files
         r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("static/"))))
-        
-        logrus.Info("Server starting on http://localhost:8080")
-        logrus.Fatal(http.ListenAndServe(":8080", r))
-}</span>
 
-func homeHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
-        tmpl := `&lt;!DOCTYPE html&gt;
-&lt;html&gt;
-&lt;head&gt;
-    &lt;title&gt;HTMX + Go&lt;/title&gt;
-    &lt;script src="https://unpkg.com/htmx.org@1.9.10"&gt;&lt;/script&gt;
-    &lt;link rel="stylesheet" href="/static/style.css"&gt;
-&lt;/head&gt;
-&lt;body class="bg-gray-100 min-h-screen"&gt;
-    &lt;div class="container mx-auto px-4 py-8 max-w-2xl"&gt;
-        &lt;h1 class="text-4xl font-bold text-center text-gray-800 mb-8"&gt;HTMX + Go Demo&lt;/h1&gt;
-        
-        &lt;div class="bg-white rounded-lg shadow-md p-6 mb-6"&gt;
-            &lt;h2 class="text-2xl font-semibold text-gray-700 mb-4"&gt;Current Time&lt;/h2&gt;
-            &lt;div id="time-display"&gt;
-                &lt;button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200" 
-                        hx-get="/time" hx-target="#time-display"&gt;Get Current Time&lt;/button&gt;
-            &lt;/div&gt;
-        &lt;/div&gt;
-        
-        &lt;div class="bg-white rounded-lg shadow-md p-6"&gt;
-            &lt;h2 class="text-2xl font-semibold text-gray-700 mb-4"&gt;Click Counter&lt;/h2&gt;
-            &lt;div id="click-counter"&gt;
-                &lt;button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-200" 
-                        hx-post="/click" hx-target="#click-counter"&gt;Click Me!&lt;/button&gt;
-            &lt;/div&gt;
-        &lt;/div&gt;
-    &lt;/div&gt;
-
-    &lt;script type="module"&gt;
-        import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk'
-        
-        // After your app is fully loaded and ready to display
-        await sdk.actions.ready()
-    &lt;/script&gt;
-&lt;/body&gt;
-&lt;/html&gt;`
-        
-        t, _ := template.New("home").Parse(tmpl)
-        t.Execute(w, nil)
+        return r
 }</span>
-
-func timeHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
-        logrus.Info("Time endpoint accessed")
-        currentTime := time.Now().Format("2006-01-02 15:04:05")
-        fmt.Fprintf(w, `&lt;div class="bg-blue-50 border border-blue-200 rounded-md p-4"&gt;
-                &lt;p class="text-gray-700"&gt;Current time: &lt;strong class="text-blue-600"&gt;%s&lt;/strong&gt;&lt;/p&gt;
-                &lt;button class="mt-3 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200" 
-                        hx-get="/time" hx-target="#time-display"&gt;Refresh Time&lt;/button&gt;
-        &lt;/div&gt;`, currentTime)
-}</span>
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package services
 
 var clickCount = 0
 
-func clickHandler(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
-        clickCount++
-        logrus.WithField("count", clickCount).Info("Button clicked")
-        fmt.Fprintf(w, `&lt;div class="bg-green-50 border border-green-200 rounded-md p-4"&gt;
-                &lt;p class="text-gray-700"&gt;Button clicked &lt;strong class="text-green-600"&gt;%d&lt;/strong&gt; times!&lt;/p&gt;
-                &lt;button class="mt-3 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-200" 
-                        hx-post="/click" hx-target="#click-counter"&gt;Click Me Again!&lt;/button&gt;
-        &lt;/div&gt;`, clickCount)
+type ClickService struct{}
+
+func NewClickService() *ClickService <span class="cov8" title="1">{
+        return &amp;ClickService{}
 }</span>
 
+func (s *ClickService) IncrementClick() int <span class="cov8" title="1">{
+        clickCount++
+        return clickCount
+}</span>
+
+func (s *ClickService) GetCount() int <span class="cov8" title="1">{
+        return clickCount
+}</span>
+
+func (s *ClickService) Reset() <span class="cov8" title="1">{
+        clickCount = 0
+}</span>
 </pre>
 		
 		</div>
