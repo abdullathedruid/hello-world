@@ -16,7 +16,7 @@ func TestSetupRoutes(t *testing.T) {
 
 func TestHomeRoute(t *testing.T) {
 	router := SetupRoutes()
-	
+
 	req, err := http.NewRequest("GET", "/", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -34,7 +34,7 @@ func TestHomeRoute(t *testing.T) {
 
 func TestDebugRoute(t *testing.T) {
 	router := SetupRoutes()
-	
+
 	req, err := http.NewRequest("GET", "/debug", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -52,7 +52,7 @@ func TestDebugRoute(t *testing.T) {
 
 func TestApiTimeRoute(t *testing.T) {
 	router := SetupRoutes()
-	
+
 	req, err := http.NewRequest("GET", "/api/time", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -74,7 +74,7 @@ func TestApiTimeRoute(t *testing.T) {
 
 func TestApiClickRoute(t *testing.T) {
 	router := SetupRoutes()
-	
+
 	req, err := http.NewRequest("POST", "/api/click", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -96,7 +96,7 @@ func TestApiClickRoute(t *testing.T) {
 
 func TestMethodNotAllowed(t *testing.T) {
 	router := SetupRoutes()
-	
+
 	// Test POST to home route (should be GET only)
 	req, err := http.NewRequest("POST", "/", nil)
 	if err != nil {
@@ -126,7 +126,7 @@ func TestMethodNotAllowed(t *testing.T) {
 
 func TestNotFoundRoute(t *testing.T) {
 	router := SetupRoutes()
-	
+
 	req, err := http.NewRequest("GET", "/nonexistent", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -142,7 +142,7 @@ func TestNotFoundRoute(t *testing.T) {
 
 func TestStaticFileRoute(t *testing.T) {
 	router := SetupRoutes()
-	
+
 	req, err := http.NewRequest("GET", "/static/css/style.css", nil)
 	if err != nil {
 		t.Fatal(err)
