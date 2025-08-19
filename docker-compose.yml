@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   app:
-    image: ghcr.io/abdullathedruid/hello-world:latest
+    build: .
     ports:
       - "8080:8080"
     environment:
