@@ -22,6 +22,9 @@ FROM golang:1.24-alpine AS go-builder
 
 WORKDIR /app
 
+# Accept build argument for commit hash
+ARG COMMIT_HASH=unknown
+
 # Copy go module files
 COPY go.mod go.sum ./
 
@@ -41,7 +44,7 @@ COPY services/ ./services/
 # Build the Go application with cache mount
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    go build -o main .
+    go build -ldflags "-X main.CommitHash=${COMMIT_HASH}" -o main .
 
 # Final stage
 FROM alpine:latest
