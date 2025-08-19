@@ -1,19 +1,103 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>{{.Title}}</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <link rel="stylesheet" href="/static/css/style.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Mobile-first responsive utilities */
+        .mobile-container {
+            transition: margin 0.3s ease;
+        }
+        
+        /* Ensure text is readable on mobile */
+        @media (max-width: 768px) {
+            body {
+                font-size: 16px;
+                line-height: 1.5;
+            }
+        }
+        
+        /* Smooth transitions for responsive changes */
+        * {
+            box-sizing: border-box;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-100 min-h-screen mobile-container" id="app-body">
     {{template "content" .}}
     
     <script type="module">
         import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk'
         
-        // After your app is fully loaded and ready to display
-        await sdk.actions.ready()
+        let contextData = null;
+        
+        async function initializeApp() {
+            try {
+                // Initialize SDK and get context
+                await sdk.actions.ready();
+                contextData = await sdk.context;
+                
+                // Apply safe area insets for mobile
+                applySafeAreaInsets();
+                
+                // Add platform-specific classes
+                addPlatformClasses();
+                
+                console.log('Farcaster context:', contextData);
+            } catch (error) {
+                console.error('SDK initialization error:', error);
+                // Fallback for non-Farcaster environments
+                addPlatformClasses();
+            }
+        }
+        
+        function applySafeAreaInsets() {
+            if (!contextData?.client?.safeAreaInsets) return;
+            
+            const { top, bottom, left, right } = contextData.client.safeAreaInsets;
+            const body = document.getElementById('app-body');
+            
+            body.style.marginTop = `${top}px`;
+            body.style.marginBottom = `${bottom}px`;
+            body.style.marginLeft = `${left}px`;
+            body.style.marginRight = `${right}px`;
+        }
+        
+        function addPlatformClasses() {
+            const body = document.body;
+            const isMobile = contextData?.client?.platformType === 'mobile' || 
+                           window.innerWidth <= 768;
+            
+            if (isMobile) {
+                body.classList.add('platform-mobile');
+            } else {
+                body.classList.add('platform-web');
+            }
+            
+            // Add viewport size classes
+            if (window.innerWidth <= 480) {
+                body.classList.add('viewport-small');
+            } else if (window.innerWidth <= 768) {
+                body.classList.add('viewport-medium');
+            } else {
+                body.classList.add('viewport-large');
+            }
+        }
+        
+        // Initialize the app
+        initializeApp();
+        
+        // Handle orientation/resize changes
+        window.addEventListener('resize', () => {
+            setTimeout(() => {
+                applySafeAreaInsets();
+                addPlatformClasses();
+            }, 100);
+        });
     </script>
 </body>
 </html>

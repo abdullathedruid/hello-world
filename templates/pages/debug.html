@@ -1,68 +1,99 @@
 {{define "content"}}
-<div class="container mx-auto px-4 py-8 max-w-4xl">
-    <h1 class="text-4xl font-bold text-center text-blue-600 mb-8">🚀 Farcaster MiniApp Debug</h1>
+<div class="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-4xl">
+    <h1 class="text-xl sm:text-3xl md:text-4xl font-bold text-center text-blue-600 mb-4 sm:mb-8 leading-tight">🚀 Farcaster MiniApp Debug</h1>
     
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <!-- Context Information -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">📊 Context Information</h2>
-            <div id="context-info" class="space-y-2 text-sm">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 mb-3 sm:mb-4 flex items-center">
+                <span class="mr-2">📊</span>Context Information
+            </h2>
+            <div id="context-info" class="space-y-2 text-xs sm:text-sm">
                 <p class="text-gray-500">Loading context...</p>
             </div>
         </div>
         
         <!-- User Information -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">👤 User Information</h2>
-            <div id="user-info" class="space-y-2 text-sm">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 mb-3 sm:mb-4 flex items-center">
+                <span class="mr-2">👤</span>User Information
+            </h2>
+            <div id="user-info" class="space-y-2 text-xs sm:text-sm">
                 <p class="text-gray-500">Loading user info...</p>
             </div>
         </div>
         
         <!-- Location & Platform -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">📍 Location & Platform</h2>
-            <div id="location-info" class="space-y-2 text-sm">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 mb-3 sm:mb-4 flex items-center">
+                <span class="mr-2">📍</span>Location & Platform
+            </h2>
+            <div id="location-info" class="space-y-2 text-xs sm:text-sm">
                 <p class="text-gray-500">Loading location info...</p>
             </div>
         </div>
         
         <!-- SDK Status -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">⚙️ SDK Status</h2>
-            <div id="sdk-status" class="space-y-2 text-sm">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 mb-3 sm:mb-4 flex items-center">
+                <span class="mr-2">⚙️</span>SDK Status
+            </h2>
+            <div id="sdk-status" class="space-y-2 text-xs sm:text-sm">
                 <p class="text-gray-500">Initializing SDK...</p>
             </div>
         </div>
         
         <!-- Actions & Methods -->
-        <div class="bg-white rounded-lg shadow-md p-6 md:col-span-2">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">🎯 Available Actions</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button id="refresh-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:col-span-2">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 mb-3 sm:mb-4 flex items-center">
+                <span class="mr-2">🎯</span>Available Actions
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <button id="refresh-btn" class="bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 touch-manipulation text-sm">
                     🔄 Refresh Data
                 </button>
-                <button id="close-btn" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition duration-200">
+                <button id="close-btn" class="bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 touch-manipulation text-sm">
                     ❌ Close MiniApp
                 </button>
-                <button id="external-link-btn" class="bg-purple-500 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded transition duration-200">
+                <button id="external-link-btn" class="bg-purple-500 hover:bg-purple-600 active:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 touch-manipulation text-sm">
                     🔗 Open External Link
                 </button>
             </div>
             <div id="action-result" class="mt-4"></div>
         </div>
         
+        <!-- Viewport & Safe Areas (Mobile-specific) -->
+        <div class="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl shadow-sm border border-green-100 p-4 sm:p-6 lg:col-span-2">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 mb-3 sm:mb-4 flex items-center">
+                <span class="mr-2">📱</span>Viewport & Safe Areas
+            </h2>
+            <div id="viewport-info" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
+                <div class="bg-white/70 rounded-lg p-3">
+                    <div class="font-medium text-gray-600 mb-2">Current Viewport:</div>
+                    <div id="current-viewport" class="text-gray-800">Loading...</div>
+                </div>
+                <div class="bg-white/70 rounded-lg p-3">
+                    <div class="font-medium text-gray-600 mb-2">Safe Area Insets:</div>
+                    <div id="safe-areas" class="text-gray-800">Loading...</div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Raw Data -->
-        <div class="bg-white rounded-lg shadow-md p-6 md:col-span-2">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">🔍 Raw SDK Data</h2>
-            <pre id="raw-data" class="bg-gray-100 p-4 rounded text-xs overflow-auto max-h-64">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 lg:col-span-2">
+            <h2 class="text-lg sm:text-xl font-semibold text-gray-700 mb-3 sm:mb-4 flex items-center">
+                <span class="mr-2">🔍</span>Raw SDK Data
+            </h2>
+            <pre id="raw-data" class="bg-gray-50 p-3 sm:p-4 rounded-lg text-xs overflow-auto max-h-48 sm:max-h-64 border">
 Loading SDK data...
             </pre>
         </div>
     </div>
     
-    <div class="text-center mt-8">
-        <a href="/" class="text-blue-500 hover:text-blue-700 font-semibold">← Back to Home</a>
+    <div class="text-center mt-6 sm:mt-8">
+        <a href="/" class="inline-flex items-center text-blue-500 hover:text-blue-700 font-semibold py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors duration-200">
+            ← Back to Home
+        </a>
     </div>
 </div>
 
@@ -111,16 +142,50 @@ Loading SDK data...
             'User Agent': navigator.userAgent,
             'Platform': navigator.platform,
             'Language': navigator.language,
-            'Screen': screen.width + 'x' + screen.height,
-            'Viewport': window.innerWidth + 'x' + window.innerHeight
+            'Screen Size': screen.width + 'x' + screen.height,
+            'Pixel Ratio': window.devicePixelRatio
         };
         
         const locationHtml = Object.entries(locationData).map(([key, value]) => 
-            '<div class="flex justify-between border-b pb-1"><span class="font-medium text-gray-600">' + key + ':</span><span class="text-gray-800 text-xs">' + value + '</span></div>'
+            '<div class="flex justify-between border-b pb-1 mb-1"><span class="font-medium text-gray-600">' + key + ':</span><span class="text-gray-800 break-all">' + value + '</span></div>'
         ).join('');
         document.getElementById('location-info').innerHTML = locationHtml;
         
+        // Update viewport and safe area information
+        updateViewportInfo();
+        
         document.getElementById('raw-data').textContent = JSON.stringify(contextData, null, 2);
+    }
+    
+    function updateViewportInfo() {
+        // Current viewport
+        const viewportInfo = {
+            'Width': window.innerWidth + 'px',
+            'Height': window.innerHeight + 'px',
+            'Ratio': (window.innerWidth / window.innerHeight).toFixed(2),
+            'Orientation': window.innerWidth > window.innerHeight ? 'Landscape' : 'Portrait'
+        };
+        
+        const viewportHtml = Object.entries(viewportInfo).map(([key, value]) => 
+            '<div class="flex justify-between text-sm mb-1"><span class="text-gray-600">' + key + ':</span><span class="font-medium">' + value + '</span></div>'
+        ).join('');
+        document.getElementById('current-viewport').innerHTML = viewportHtml;
+        
+        // Safe area insets from Farcaster SDK
+        let safeAreaHtml = '<div class="text-gray-500 text-sm">Not available</div>';
+        if (contextData?.client?.safeAreaInsets) {
+            const { top, bottom, left, right } = contextData.client.safeAreaInsets;
+            safeAreaHtml = `
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div class="flex justify-between"><span class="text-gray-600">Top:</span><span class="font-medium">${top}px</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Bottom:</span><span class="font-medium">${bottom}px</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Left:</span><span class="font-medium">${left}px</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Right:</span><span class="font-medium">${right}px</span></div>
+                </div>
+                <div class="mt-2 text-xs text-gray-500">Platform: ${contextData.client.platformType}</div>
+            `;
+        }
+        document.getElementById('safe-areas').innerHTML = safeAreaHtml;
     }
     
     document.getElementById('refresh-btn').addEventListener('click', async () => {
@@ -153,5 +218,26 @@ Loading SDK data...
     });
     
     initializeSDK();
+    
+    // Handle viewport changes for mobile
+    window.addEventListener('resize', () => {
+        setTimeout(() => {
+            updateViewportInfo();
+        }, 100);
+    });
+    
+    // Add touch feedback for buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        const buttons = document.querySelectorAll('button, a');
+        buttons.forEach(button => {
+            button.addEventListener('touchstart', function() {
+                this.style.transform = 'scale(0.98)';
+            });
+            
+            button.addEventListener('touchend', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+    });
 </script>
 {{end}}
