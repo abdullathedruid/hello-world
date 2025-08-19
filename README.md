@@ -4,10 +4,26 @@ A well-organized Go + HTMX application following scalable architecture patterns.
 
 ## Quick Start
 
+### Local Development
 ```bash
 go build
 ./hello-world
 # Visit http://localhost:8080
+```
+
+### Docker Development
+```bash
+# Start with Docker (automatically includes commit hash in logs)
+make docker-up
+
+# Or start in background
+make docker-up-detached
+
+# Stop services
+make docker-down
+
+# Rebuild and restart
+make docker-rebuild
 ```
 
 ## Structure
@@ -29,7 +45,8 @@ go build
 - ✅ Separation of full pages vs HTMX fragments
 - ✅ Clean API routes under `/api/*`
 - ✅ Farcaster MiniApp SDK integration
-- ✅ Structured logging with Logrus
+- ✅ Structured logging with slog
+- ✅ Automatic commit hash logging in Docker deployments
 
 ## Development Workflow
 
@@ -58,6 +75,30 @@ make lint
 
 # Run all checks
 make check
+```
+
+### Docker Commands
+```bash
+# Build Docker images with current commit hash
+make docker-build
+
+# Start services (foreground)
+make docker-up
+
+# Start services (background)
+make docker-up-detached
+
+# Stop services
+make docker-down
+
+# Restart services with latest commit hash
+make docker-restart
+
+# Rebuild and start services
+make docker-rebuild
+
+# View logs
+make docker-logs
 ```
 
 ### Before Creating a Pull Request

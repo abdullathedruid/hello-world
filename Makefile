@@ -1,4 +1,4 @@
-.PHONY: test test-verbose test-coverage build run clean lint fmt vet
+.PHONY: test test-verbose test-coverage build run clean lint fmt vet docker-build docker-up docker-down docker-restart
 
 # Default target
 all: test build
@@ -61,3 +61,35 @@ check: fmt vet test bench
 deps:
 	go mod tidy
 	go mod download
+
+# Docker targets
+COMMIT_HASH := $(shell git rev-parse HEAD)
+
+# Build Docker images with commit hash
+docker-build:
+	@echo "Building with commit hash: $(COMMIT_HASH)"
+	COMMIT_HASH=$(COMMIT_HASH) docker-compose build
+
+# Start services with automatic commit hash
+docker-up:
+	@echo "Starting with commit hash: $(COMMIT_HASH)"
+	COMMIT_HASH=$(COMMIT_HASH) docker-compose up
+
+# Start services in background with automatic commit hash
+docker-up-detached:
+	@echo "Starting in background with commit hash: $(COMMIT_HASH)"
+	COMMIT_HASH=$(COMMIT_HASH) docker-compose up -d
+
+# Stop services
+docker-down:
+	docker-compose down
+
+# Restart services with latest commit hash
+docker-restart: docker-down docker-up
+
+# Rebuild and start services
+docker-rebuild: docker-build docker-up
+
+# View logs
+docker-logs:
+	docker-compose logs -f
