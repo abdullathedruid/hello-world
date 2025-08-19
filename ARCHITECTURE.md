@@ -178,4 +178,27 @@ func SmartHandler(w http.ResponseWriter, r *http.Request) {
 - Test templates by checking rendered output
 - Use table-driven tests for multiple scenarios
 
+## Development Workflow (LLM Instructions)
+
+**CRITICAL: LLMs MUST follow this workflow when making changes:**
+
+### Before Creating Pull Requests
+**ALWAYS run these commands in order:**
+```bash
+make fmt        # Format code (REQUIRED)
+make vet        # Check for issues
+make test       # Ensure all tests pass
+```
+
+### Code Quality Standards
+- **Formatting**: All code MUST be formatted with `go fmt`
+- **Linting**: Code MUST pass `go vet` without warnings
+- **Testing**: All tests MUST pass before committing
+- **Coverage**: Maintain or improve test coverage
+
+### Commit Message Standards
+- Use clear, descriptive commit messages
+- Include what was changed and why
+- Reference issue numbers when applicable
+
 This architecture scales from simple demos to production applications while maintaining clear separation of concerns and HTMX best practices.
