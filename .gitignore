@@ -7,3 +7,5 @@ hello-world
 *.dll
 *.so
 *.dylib
+
+volumes/
