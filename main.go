@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"hello-world/config"
@@ -53,50 +53,16 @@ func main() {
 }
 
 // initOtelLogging initializes an OTLP HTTP exporter and slog bridge.
-// Env vars used:
-// - OTEL_EXPORTER_OTLP_ENDPOINT (default: http://localhost:4318)
-// - OTEL_EXPORTER_OTLP_HEADERS  (key1=value1,key2=value2)
 func initOtelLogging(ctx context.Context) (func(context.Context) error, error) {
 	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 	if endpoint == "" {
-		endpoint = "http://localhost:4318"
-	}
-
-	// Normalize endpoint for otlploghttp: use host:port, stripping scheme and path if present
-	if strings.HasPrefix(endpoint, "http://") || strings.HasPrefix(endpoint, "https://") {
-		noScheme := strings.TrimPrefix(strings.TrimPrefix(endpoint, "http://"), "https://")
-		if slash := strings.Index(noScheme, "/"); slash != -1 {
-			endpoint = noScheme[:slash]
-		} else {
-			endpoint = noScheme
-		}
-	}
-
-	headersEnv := os.Getenv("OTEL_EXPORTER_OTLP_HEADERS")
-	headers := map[string]string{}
-	if headersEnv != "" {
-		for _, pair := range strings.Split(headersEnv, ",") {
-			kv := strings.SplitN(strings.TrimSpace(pair), "=", 2)
-			if len(kv) == 2 {
-				headers[strings.TrimSpace(kv[0])] = strings.TrimSpace(kv[1])
-			}
-		}
-	}
-
-	// If a CLICKSTACK_API_KEY is present, set Authorization header unless already provided
-	if apiKey := os.Getenv("CLICKSTACK_API_KEY"); apiKey != "" {
-		if _, ok := headers["authorization"]; !ok {
-			if _, ok2 := headers["Authorization"]; !ok2 {
-				headers["authorization"] = apiKey
-			}
-		}
+		log.Fatalf("OTEL_EXPORTER_OTLP_ENDPOINT is not set")
 	}
 
 	exporter, err := otlploghttp.New(
 		ctx,
 		otlploghttp.WithEndpoint(endpoint),
 		otlploghttp.WithInsecure(),
-		otlploghttp.WithHeaders(headers),
 	)
 	if err != nil {
 		return nil, err

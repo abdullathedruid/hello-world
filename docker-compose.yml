@@ -11,7 +11,6 @@ services:
     environment:
       - ENV=production
       - OTEL_EXPORTER_OTLP_ENDPOINT=clickstack:4318
-      - CLICKSTACK_API_KEY=${CLICKSTACK_API_KEY}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
