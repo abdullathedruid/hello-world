@@ -15,10 +15,12 @@ import (
 	"go.opentelemetry.io/contrib/bridges/otelslog"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	logglobal "go.opentelemetry.io/otel/log/global"
 	"go.opentelemetry.io/otel/propagation"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
@@ -44,6 +46,19 @@ func main() {
 			flushCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			_ = traceShutdown(flushCtx)
+		}()
+	}
+
+	// Initialize metrics
+	metricsShutdown, err := initOtelMetrics(ctx)
+	if err != nil {
+		slog.Warn("OpenTelemetry metrics not enabled", "error", err)
+	} else {
+		slog.Info("OpenTelemetry metrics enabled")
+		defer func() {
+			flushCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_ = metricsShutdown(flushCtx)
 		}()
 	}
 
@@ -163,4 +178,52 @@ func initOtelTracing(ctx context.Context) (func(context.Context) error, error) {
 	otel.SetTextMapPropagator(propagation.TraceContext{})
 
 	return traceProvider.Shutdown, nil
+}
+
+// initOtelMetrics initializes OpenTelemetry metrics
+func initOtelMetrics(ctx context.Context) (func(context.Context) error, error) {
+	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	if endpoint == "" {
+		log.Fatalf("OTEL_EXPORTER_OTLP_ENDPOINT is not set")
+	}
+
+	// Create metrics exporter
+	metricsExporter, err := otlpmetrichttp.New(
+		ctx,
+		otlpmetrichttp.WithEndpoint(endpoint),
+		otlpmetrichttp.WithURLPath("/v1/metrics"),
+		otlpmetrichttp.WithInsecure(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create resource
+	res, err := resource.New(ctx,
+		resource.WithFromEnv(),
+		resource.WithTelemetrySDK(),
+		resource.WithAttributes(
+			semconv.ServiceNameKey.String("hello-world"),
+			semconv.ServiceVersionKey.String(CommitHash),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create metrics provider
+	reader := sdkmetric.NewPeriodicReader(
+		metricsExporter,
+		sdkmetric.WithInterval(30*time.Second), // Export every 30 seconds
+	)
+
+	metricsProvider := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(reader),
+		sdkmetric.WithResource(res),
+	)
+
+	// Set global metrics provider
+	otel.SetMeterProvider(metricsProvider)
+
+	return metricsProvider.Shutdown, nil
 }
