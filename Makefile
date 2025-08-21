@@ -25,8 +25,12 @@ bench:
 test-integration:
 	go test -v -tags=integration ./...
 
+# Build frontend assets
+build-frontend:
+	npm run build
+
 # Build the application
-build:
+build: build-frontend
 	go build -o main .
 
 # Run the application
@@ -36,6 +40,7 @@ run:
 # Clean build artifacts
 clean:
 	rm -f main coverage.out coverage.html
+	rm -rf static/js/*.js static/js/*.js.map
 
 # Format code
 fmt:
