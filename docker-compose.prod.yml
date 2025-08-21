@@ -1,0 +1,11 @@
+services:
+  app:
+    networks:
+      - dokploy-network
+  clickstack:
+    networks:
+      - dokploy-network
+    
+networks:
+  dokploy-network:
+    external: true

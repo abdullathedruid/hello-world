@@ -23,7 +23,8 @@ FROM golang:1.24-alpine AS go-builder
 WORKDIR /app
 
 # Accept build argument for commit hash
-ARG COMMIT_HASH=unknown
+ARG COMMIT_HASH
+ENV COMMIT_HASH=${COMMIT_HASH:-unknown}
 
 # Copy go module files
 COPY go.mod go.sum ./
