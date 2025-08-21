@@ -20,11 +20,11 @@ var (
 	observabilityMeter  = otel.Meter("hello-world/middleware")
 
 	// Metrics (initialized once)
-	httpRequestsTotal    metric.Int64Counter
-	httpRequestDuration  metric.Float64Histogram
-	httpRequestSize      metric.Int64Histogram
-	httpResponseSize     metric.Int64Histogram
-	httpActiveRequests   metric.Int64UpDownCounter
+	httpRequestsTotal        metric.Int64Counter
+	httpRequestDuration      metric.Float64Histogram
+	httpRequestSize          metric.Int64Histogram
+	httpResponseSize         metric.Int64Histogram
+	httpActiveRequests       metric.Int64UpDownCounter
 	observabilityInitialized = false
 )
 
@@ -178,12 +178,12 @@ func ObservabilityMiddleware(next http.Handler) http.Handler {
 		// Record metrics
 		if observabilityInitialized {
 			metricAttrs := metric.WithAttributes(commonAttrs...)
-			
+
 			httpRequestsTotal.Add(ctx, 1, metricAttrs)
 			httpRequestDuration.Record(ctx, duration.Seconds(), metricAttrs)
 			httpRequestSize.Record(ctx, requestSize, metricAttrs)
 			httpResponseSize.Record(ctx, wrapped.responseSize, metricAttrs)
-			
+
 			// Decrement active requests
 			httpActiveRequests.Add(ctx, -1,
 				metric.WithAttributes(

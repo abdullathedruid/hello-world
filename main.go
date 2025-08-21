@@ -216,7 +216,7 @@ func initOtelMetrics(ctx context.Context) (func(context.Context) error, error) {
 		metricsExporter,
 		sdkmetric.WithInterval(30*time.Second), // Export every 30 seconds
 	)
-	
+
 	metricsProvider := sdkmetric.NewMeterProvider(
 		sdkmetric.WithReader(reader),
 		sdkmetric.WithResource(res),
