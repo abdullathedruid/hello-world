@@ -32,6 +32,7 @@ func main() {
 	if err != nil {
 		slog.Warn("OpenTelemetry logging not enabled", "error", err)
 	} else {
+		slog.Info("OpenTelemetry logging enabled")
 		defer func() {
 			flushCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()

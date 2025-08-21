@@ -11,6 +11,7 @@ services:
     environment:
       - ENV=production
       - OTEL_EXPORTER_OTLP_ENDPOINT=clickstack:4318
+      - OTEL_LOG_LEVEL=debug
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
@@ -32,6 +33,7 @@ services:
       - 4318:4318 # OTLP HTTP
     environment:
       - HYPERDX_APP_PORT=8081
+    restart: unless-stopped
     volumes:
       - ./volumes/db:/data/db
       - ./volumes/ch_data:/var/lib/clickhouse
