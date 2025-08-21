@@ -9,13 +9,18 @@ import (
 	"time"
 
 	"hello-world/config"
+	"hello-world/middleware"
 	"hello-world/routes"
 
 	"go.opentelemetry.io/contrib/bridges/otelslog"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploghttp"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	logglobal "go.opentelemetry.io/otel/log/global"
+	"go.opentelemetry.io/otel/propagation"
 	sdklog "go.opentelemetry.io/otel/sdk/log"
 	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
@@ -28,7 +33,22 @@ func main() {
 	slog.SetDefault(tempLogger)
 
 	ctx := context.Background()
-	shutdown, err := initOtelLogging(ctx)
+
+	// Initialize tracing
+	traceShutdown, err := initOtelTracing(ctx)
+	if err != nil {
+		slog.Warn("OpenTelemetry tracing not enabled", "error", err)
+	} else {
+		slog.Info("OpenTelemetry tracing enabled")
+		defer func() {
+			flushCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			_ = traceShutdown(flushCtx)
+		}()
+	}
+
+	// Initialize logging with trace integration
+	logShutdown, err := initOtelLogging(ctx)
 	if err != nil {
 		slog.Warn("OpenTelemetry logging not enabled", "error", err)
 	} else {
@@ -36,7 +56,7 @@ func main() {
 		defer func() {
 			flushCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			_ = shutdown(flushCtx)
+			_ = logShutdown(flushCtx)
 		}()
 	}
 
@@ -92,7 +112,55 @@ func initOtelLogging(ctx context.Context) (func(context.Context) error, error) {
 		"hello-world",
 		otelslog.WithLoggerProvider(provider),
 	)
-	slog.SetDefault(otelSlog)
+
+	// Wrap with TraceHandler to add trace IDs to logs
+	traceHandler := middleware.NewTraceHandler(otelSlog.Handler())
+	tracedLogger := slog.New(traceHandler)
+	slog.SetDefault(tracedLogger)
 
 	return provider.Shutdown, nil
+}
+
+// initOtelTracing initializes OpenTelemetry tracing
+func initOtelTracing(ctx context.Context) (func(context.Context) error, error) {
+	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+	if endpoint == "" {
+		log.Fatalf("OTEL_EXPORTER_OTLP_ENDPOINT is not set")
+	}
+
+	// Create trace exporter
+	traceExporter, err := otlptracehttp.New(
+		ctx,
+		otlptracehttp.WithEndpoint(endpoint),
+		otlptracehttp.WithInsecure(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create resource
+	res, err := resource.New(ctx,
+		resource.WithFromEnv(),
+		resource.WithTelemetrySDK(),
+		resource.WithAttributes(
+			semconv.ServiceNameKey.String("hello-world"),
+			semconv.ServiceVersionKey.String(CommitHash),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create trace provider
+	traceProvider := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(traceExporter),
+		sdktrace.WithResource(res),
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+	)
+
+	// Set global trace provider and propagator
+	otel.SetTracerProvider(traceProvider)
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+
+	return traceProvider.Shutdown, nil
 }
