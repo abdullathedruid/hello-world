@@ -2,6 +2,7 @@ node_modules/
 
 # Go build artifacts
 hello-world
+main
 *.exe
 *.exe~
 *.dll
