@@ -15,10 +15,10 @@ import (
 
 func LoggingMiddleware(next http.Handler) http.Handler {
 	tracer := otel.Tracer("hello-world/middleware")
-	
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		
+
 		// Start a new span for this request
 		ctx, span := tracer.Start(r.Context(), "http_request",
 			trace.WithAttributes(
@@ -36,7 +36,7 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 
 		duration := time.Since(start)
-		
+
 		// Add span attributes for response
 		span.SetAttributes(
 			attribute.Int64("http.duration_ms", duration.Milliseconds()),

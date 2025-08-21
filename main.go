@@ -33,7 +33,7 @@ func main() {
 	slog.SetDefault(tempLogger)
 
 	ctx := context.Background()
-	
+
 	// Initialize tracing
 	traceShutdown, err := initOtelTracing(ctx)
 	if err != nil {
@@ -46,7 +46,7 @@ func main() {
 			_ = traceShutdown(flushCtx)
 		}()
 	}
-	
+
 	// Initialize logging with trace integration
 	logShutdown, err := initOtelLogging(ctx)
 	if err != nil {
@@ -112,7 +112,7 @@ func initOtelLogging(ctx context.Context) (func(context.Context) error, error) {
 		"hello-world",
 		otelslog.WithLoggerProvider(provider),
 	)
-	
+
 	// Wrap with TraceHandler to add trace IDs to logs
 	traceHandler := middleware.NewTraceHandler(otelSlog.Handler())
 	tracedLogger := slog.New(traceHandler)
