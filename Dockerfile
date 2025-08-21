@@ -1,10 +1,11 @@
-# Build stage for CSS
-FROM node:18-alpine AS css-builder
+# Build stage for frontend assets
+FROM node:18-alpine AS frontend-builder
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+COPY tsconfig.json ./
 
 # Install dependencies with cache mount
 RUN --mount=type=cache,target=/root/.npm \
@@ -14,8 +15,8 @@ RUN --mount=type=cache,target=/root/.npm \
 COPY tailwind.config.js ./
 COPY src/ ./src/
 
-# Create static directory and build CSS
-RUN mkdir -p static/css && npm run build-css
+# Create static directory and build all frontend assets
+RUN mkdir -p static/css static/js && npm run build
 
 # Build stage for Go
 FROM golang:1.24-alpine AS go-builder
@@ -58,8 +59,8 @@ WORKDIR /root/
 # Copy the Go binary
 COPY --from=go-builder /app/main .
 
-# Copy static files from CSS build stage
-COPY --from=css-builder /app/static ./static/
+# Copy static files from frontend build stage
+COPY --from=frontend-builder /app/static ./static/
 
 # Copy template files
 COPY templates/ ./templates/

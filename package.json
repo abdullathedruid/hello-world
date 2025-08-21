@@ -5,6 +5,9 @@
   "main": "index.js",
   "scripts": {
     "build-css": "tailwindcss -i ./src/input.css -o ./static/css/style.css",
+    "build-js": "tsc && cp node_modules/htmx.org/dist/htmx.min.js static/js/",
+    "build": "npm run build-css && npm run build-js",
+    "watch": "tsc --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -14,6 +17,9 @@
     "tailwindcss": "^4.1.12"
   },
   "dependencies": {
-    "@tailwindcss/cli": "^4.1.12"
+    "@tailwindcss/cli": "^4.1.12",
+    "@types/node": "^24.3.0",
+    "htmx.org": "^2.0.6",
+    "typescript": "^5.9.2"
   }
 }
