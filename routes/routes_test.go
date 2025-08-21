@@ -157,3 +157,48 @@ func TestStaticFileRoute(t *testing.T) {
 		t.Errorf("static route returned unexpected status: got %v", status)
 	}
 }
+
+func TestHealthcheckRoute(t *testing.T) {
+	router := SetupRoutes()
+
+	req, err := http.NewRequest("GET", "/health", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusOK {
+		t.Errorf("healthcheck route returned wrong status code: got %v want %v",
+			status, http.StatusOK)
+	}
+
+	expectedBody := `{"status":"ok"}`
+	if rr.Body.String() != expectedBody {
+		t.Errorf("healthcheck route returned unexpected body: got %v want %v",
+			rr.Body.String(), expectedBody)
+	}
+
+	expectedContentType := "application/json"
+	if contentType := rr.Header().Get("Content-Type"); contentType != expectedContentType {
+		t.Errorf("healthcheck route returned wrong content type: got %v want %v",
+			contentType, expectedContentType)
+	}
+}
+
+func TestHealthcheckRouteMethodNotAllowed(t *testing.T) {
+	router := SetupRoutes()
+
+	req, err := http.NewRequest("POST", "/health", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusMethodNotAllowed {
+		t.Errorf("POST to healthcheck route should return MethodNotAllowed, got %v", status)
+	}
+}
