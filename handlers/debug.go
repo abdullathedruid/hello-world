@@ -7,7 +7,7 @@ import (
 )
 
 func DebugHandler(w http.ResponseWriter, r *http.Request) {
-	slog.Info("Debug page accessed")
+	slog.InfoContext(r.Context(), "Debug page accessed")
 	tmpl, err := template.ParseFiles(
 		"templates/layouts/base.html",
 		"templates/pages/debug.html",

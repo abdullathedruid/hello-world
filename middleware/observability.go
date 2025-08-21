@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -113,16 +114,27 @@ func ObservabilityMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		// Generate request ID for correlation
-		requestID := generateRequestID()
+		// Correlate request ID (accept inbound or generate new)
+		requestID := r.Header.Get("X-Request-Id")
+		if requestID == "" {
+			requestID = generateRequestID()
+		}
 		ctx := ContextWithRequestID(r.Context(), requestID)
 
+		// Derive route template for low-cardinality span name/attributes
+		routeTemplate := r.URL.Path
+		if route := mux.CurrentRoute(r); route != nil {
+			if tmpl, err := route.GetPathTemplate(); err == nil {
+				routeTemplate = tmpl
+			}
+		}
+
 		// Start tracing span
-		ctx, span := observabilityTracer.Start(ctx, "http_request",
+		ctx, span := observabilityTracer.Start(ctx, r.Method+" "+routeTemplate,
 			trace.WithAttributes(
-				attribute.String("http.method", r.Method),
-				attribute.String("http.url", r.URL.Path),
-				attribute.String("http.user_agent", r.UserAgent()),
+				attribute.String("http.request.method", r.Method),
+				attribute.String("url.path", routeTemplate),
+				attribute.String("user_agent", r.UserAgent()),
 				attribute.String("request_id", requestID),
 			),
 		)
@@ -130,6 +142,8 @@ func ObservabilityMiddleware(next http.Handler) http.Handler {
 
 		// Update request with enriched context
 		r = r.WithContext(ctx)
+		// Return request id for clients
+		w.Header().Set("X-Request-Id", requestID)
 
 		// Calculate request size from Content-Length header
 		requestSize := r.ContentLength
@@ -137,14 +151,14 @@ func ObservabilityMiddleware(next http.Handler) http.Handler {
 			requestSize = 0 // Unknown content length
 		}
 
-		// Increment active requests metric
+		// Increment active requests metric and ensure decrement
 		if httpActiveRequests != nil {
-			httpActiveRequests.Add(ctx, 1,
-				metric.WithAttributes(
-					attribute.String("http.method", r.Method),
-					attribute.String("http.route", r.URL.Path),
-				),
+			attrs := metric.WithAttributes(
+				attribute.String("http.request.method", r.Method),
+				attribute.String("http.route", routeTemplate),
 			)
+			httpActiveRequests.Add(ctx, 1, attrs)
+			defer httpActiveRequests.Add(ctx, -1, attrs)
 		}
 
 		// Wrap response writer for metrics collection
@@ -161,9 +175,9 @@ func ObservabilityMiddleware(next http.Handler) http.Handler {
 
 		// Common attributes for all observability signals (following OpenTelemetry semantic conventions)
 		commonAttrs := []attribute.KeyValue{
-			attribute.String("http.method", r.Method),
-			attribute.String("http.route", r.URL.Path),
-			attribute.Int("http.status_code", wrapped.statusCode),
+			attribute.String("http.request.method", r.Method),
+			attribute.String("http.route", routeTemplate),
+			attribute.Int("http.response.status_code", wrapped.statusCode),
 		}
 
 		// Update tracing span with response data
@@ -185,18 +199,13 @@ func ObservabilityMiddleware(next http.Handler) http.Handler {
 			httpResponseSize.Record(ctx, wrapped.responseSize, metricAttrs)
 
 			// Decrement active requests
-			httpActiveRequests.Add(ctx, -1,
-				metric.WithAttributes(
-					attribute.String("http.method", r.Method),
-					attribute.String("http.route", r.URL.Path),
-				),
-			)
+			// handled by defer above
 		}
 
 		// Structured logging with trace correlation
 		slog.InfoContext(ctx, "Request processed",
 			"method", r.Method,
-			"path", r.URL.Path,
+			"route", routeTemplate,
 			"status_code", wrapped.statusCode,
 			"duration", duration,
 			"response_size", wrapped.responseSize,
