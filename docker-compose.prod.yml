@@ -1,10 +1,15 @@
 services:
   app:
+    image: ghcr.io/abdullathedruid/hello-world:latest
     networks:
       - dokploy-network
   clickstack:
     networks:
       - dokploy-network
+    volumes:
+      - ../files/volumes/db:/data/db
+      - ../files/volumes/ch_data:/var/lib/clickhouse
+      - ../files/volumes/ch_logs:/var/log/clickhouse-server
     
 networks:
   dokploy-network:
