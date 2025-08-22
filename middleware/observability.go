@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -21,12 +22,18 @@ var (
 	observabilityMeter  = otel.Meter("hello-world/middleware")
 
 	// Metrics (initialized once)
-	httpRequestsTotal        metric.Int64Counter
 	httpRequestDuration      metric.Float64Histogram
 	httpRequestSize          metric.Int64Histogram
 	httpResponseSize         metric.Int64Histogram
 	httpActiveRequests       metric.Int64UpDownCounter
 	observabilityInitialized = false
+)
+
+// contextKey is an unexported type to avoid collisions in context values
+type contextKey int
+
+const (
+	requestIDKey contextKey = iota
 )
 
 // ObservabilityResponseWriter wraps http.ResponseWriter to capture metrics
@@ -55,26 +62,27 @@ func initObservabilityMetrics() error {
 
 	var err error
 
-	httpRequestsTotal, err = observabilityMeter.Int64Counter(
-		"http_server_requests_total",
-		metric.WithDescription("Total number of HTTP server requests"),
+	httpRequestDuration, err = observabilityMeter.Float64Histogram(
+		"http.server.request.duration",
+		metric.WithDescription("Duration of HTTP server requests"),
+		metric.WithUnit("s"),
+		metric.WithExplicitBucketBoundaries(0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10),
+	)
+	if err != nil {
+		return err
+	}
+
+	httpActiveRequests, err = observabilityMeter.Int64UpDownCounter(
+		"http.server.active_requests",
+		metric.WithDescription("Number of active HTTP server requests"),
 		metric.WithUnit("1"),
 	)
 	if err != nil {
 		return err
 	}
 
-	httpRequestDuration, err = observabilityMeter.Float64Histogram(
-		"http_server_request_duration_seconds",
-		metric.WithDescription("Duration of HTTP server requests"),
-		metric.WithUnit("s"),
-	)
-	if err != nil {
-		return err
-	}
-
 	httpRequestSize, err = observabilityMeter.Int64Histogram(
-		"http_server_request_size_bytes",
+		"http.server.request.size",
 		metric.WithDescription("Size of HTTP server requests"),
 		metric.WithUnit("By"),
 	)
@@ -83,18 +91,9 @@ func initObservabilityMetrics() error {
 	}
 
 	httpResponseSize, err = observabilityMeter.Int64Histogram(
-		"http_server_response_size_bytes",
+		"http.server.response.size",
 		metric.WithDescription("Size of HTTP server responses"),
 		metric.WithUnit("By"),
-	)
-	if err != nil {
-		return err
-	}
-
-	httpActiveRequests, err = observabilityMeter.Int64UpDownCounter(
-		"http_server_active_requests",
-		metric.WithDescription("Number of active HTTP server requests"),
-		metric.WithUnit("1"),
 	)
 	if err != nil {
 		return err
@@ -132,9 +131,9 @@ func ObservabilityMiddleware(next http.Handler) http.Handler {
 		// Start tracing span
 		ctx, span := observabilityTracer.Start(ctx, r.Method+" "+routeTemplate,
 			trace.WithAttributes(
-				attribute.String("http.request.method", r.Method),
-				attribute.String("url.path", routeTemplate),
-				attribute.String("user_agent", r.UserAgent()),
+				semconv.HTTPRequestMethodKey.String(r.Method),
+				semconv.URLPathKey.String(r.URL.Path),
+				semconv.UserAgentOriginalKey.String(r.UserAgent()),
 				attribute.String("request_id", requestID),
 			),
 		)
@@ -145,17 +144,14 @@ func ObservabilityMiddleware(next http.Handler) http.Handler {
 		// Return request id for clients
 		w.Header().Set("X-Request-Id", requestID)
 
-		// Calculate request size from Content-Length header
-		requestSize := r.ContentLength
-		if requestSize < 0 {
-			requestSize = 0 // Unknown content length
-		}
+		// Ensure Content-Length is non-negative
+		requestSize := max(r.ContentLength, 0)
 
 		// Increment active requests metric and ensure decrement
 		if httpActiveRequests != nil {
 			attrs := metric.WithAttributes(
-				attribute.String("http.request.method", r.Method),
-				attribute.String("http.route", routeTemplate),
+				semconv.HTTPRequestMethodKey.String(r.Method),
+				semconv.HTTPRouteKey.String(routeTemplate),
 			)
 			httpActiveRequests.Add(ctx, 1, attrs)
 			defer httpActiveRequests.Add(ctx, -1, attrs)
@@ -175,17 +171,16 @@ func ObservabilityMiddleware(next http.Handler) http.Handler {
 
 		// Common attributes for all observability signals (following OpenTelemetry semantic conventions)
 		commonAttrs := []attribute.KeyValue{
-			attribute.String("http.request.method", r.Method),
-			attribute.String("http.route", routeTemplate),
-			attribute.Int("http.response.status_code", wrapped.statusCode),
+			semconv.HTTPRequestMethodKey.String(r.Method),
+			semconv.HTTPRouteKey.String(routeTemplate),
+			semconv.HTTPResponseStatusCodeKey.Int(wrapped.statusCode),
 		}
 
 		// Update tracing span with response data
 		span.SetAttributes(
 			append(commonAttrs,
-				attribute.Int64("http.duration_ms", duration.Milliseconds()),
-				attribute.Int64("http.request_size", requestSize),
-				attribute.Int64("http.response_size", wrapped.responseSize),
+				semconv.HTTPRequestBodySizeKey.Int64(requestSize),
+				semconv.HTTPResponseBodySizeKey.Int64(wrapped.responseSize),
 			)...,
 		)
 
@@ -193,7 +188,6 @@ func ObservabilityMiddleware(next http.Handler) http.Handler {
 		if observabilityInitialized {
 			metricAttrs := metric.WithAttributes(commonAttrs...)
 
-			httpRequestsTotal.Add(ctx, 1, metricAttrs)
 			httpRequestDuration.Record(ctx, duration.Seconds(), metricAttrs)
 			httpRequestSize.Record(ctx, requestSize, metricAttrs)
 			httpResponseSize.Record(ctx, wrapped.responseSize, metricAttrs)
@@ -202,20 +196,12 @@ func ObservabilityMiddleware(next http.Handler) http.Handler {
 			// handled by defer above
 		}
 
-		// Structured logging with trace correlation
-		slog.InfoContext(ctx, "Request processed",
-			"method", r.Method,
-			"route", routeTemplate,
-			"status_code", wrapped.statusCode,
-			"duration", duration,
-			"response_size", wrapped.responseSize,
-		)
 	})
 }
 
 // ContextWithRequestID adds a request ID to the context
 func ContextWithRequestID(ctx context.Context, requestID string) context.Context {
-	return context.WithValue(ctx, "request_id", requestID)
+	return context.WithValue(ctx, requestIDKey, requestID)
 }
 
 // generateRequestID generates a random request ID

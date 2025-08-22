@@ -296,5 +296,5 @@ func envOrDefaultSampler() sdktrace.Sampler {
 			return sdktrace.ParentBased(sdktrace.TraceIDRatioBased(ratio))
 		}
 	}
-	return sdktrace.ParentBased(sdktrace.TraceIDRatioBased(0.10))
+	return sdktrace.ParentBased(sdktrace.AlwaysSample())
 }

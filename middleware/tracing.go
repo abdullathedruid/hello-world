@@ -37,7 +37,7 @@ func (h *TraceHandler) Handle(ctx context.Context, r slog.Record) error {
 
 // getRequestID extracts request ID from context
 func getRequestID(ctx context.Context) string {
-	if reqID := ctx.Value("request_id"); reqID != nil {
+	if reqID := ctx.Value(requestIDKey); reqID != nil {
 		if id, ok := reqID.(string); ok {
 			return id
 		}
