@@ -2,10 +2,14 @@ package main
 
 import (
 	"context"
-	"log"
+	"crypto/tls"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
 	"time"
 
 	"hello-world/config"
@@ -78,13 +82,33 @@ func main() {
 	// Load configuration
 	cfg := config.Load()
 
-	// Setup routes
+	// Setup routes and HTTP server
 	r := routes.SetupRoutes()
+	srv := &http.Server{
+		Addr:         ":" + cfg.Port,
+		Handler:      r,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
 
-	slog.Info("Server starting", "url", "http://localhost:"+cfg.Port, "commit", CommitHash)
-	if err := http.ListenAndServe(":"+cfg.Port, r); err != nil {
-		slog.Error("Server failed to start", "error", err)
-		os.Exit(1)
+	go func() {
+		slog.Info("Server starting", "url", "http://localhost:"+cfg.Port, "commit", CommitHash)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error("HTTP server error", "error", err)
+		}
+	}()
+
+	// Graceful shutdown on SIGINT/SIGTERM
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+	<-stop
+	slog.Info("Shutdown signal received")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		slog.Error("Graceful shutdown failed", "error", err)
 	}
 }
 
@@ -92,14 +116,19 @@ func main() {
 func initOtelLogging(ctx context.Context) (func(context.Context) error, error) {
 	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 	if endpoint == "" {
-		log.Fatalf("OTEL_EXPORTER_OTLP_ENDPOINT is not set")
+		return nil, fmt.Errorf("OTEL_EXPORTER_OTLP_ENDPOINT is not set")
 	}
 
-	exporter, err := otlploghttp.New(
-		ctx,
-		otlploghttp.WithEndpoint(endpoint),
-		otlploghttp.WithInsecure(),
-	)
+	// TLS/insecure config via env
+	insecure := otlpInsecure()
+	logOpts := []otlploghttp.Option{otlploghttp.WithEndpoint(endpoint)}
+	if insecure {
+		logOpts = append(logOpts, otlploghttp.WithInsecure())
+	} else {
+		logOpts = append(logOpts, otlploghttp.WithTLSClientConfig(&tls.Config{MinVersion: tls.VersionTLS12}))
+	}
+
+	exporter, err := otlploghttp.New(ctx, logOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -140,15 +169,18 @@ func initOtelLogging(ctx context.Context) (func(context.Context) error, error) {
 func initOtelTracing(ctx context.Context) (func(context.Context) error, error) {
 	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 	if endpoint == "" {
-		log.Fatalf("OTEL_EXPORTER_OTLP_ENDPOINT is not set")
+		return nil, fmt.Errorf("OTEL_EXPORTER_OTLP_ENDPOINT is not set")
 	}
 
 	// Create trace exporter
-	traceExporter, err := otlptracehttp.New(
-		ctx,
-		otlptracehttp.WithEndpoint(endpoint),
-		otlptracehttp.WithInsecure(),
-	)
+	insecure := otlpInsecure()
+	traceOpts := []otlptracehttp.Option{otlptracehttp.WithEndpoint(endpoint)}
+	if insecure {
+		traceOpts = append(traceOpts, otlptracehttp.WithInsecure())
+	} else {
+		traceOpts = append(traceOpts, otlptracehttp.WithTLSClientConfig(&tls.Config{MinVersion: tls.VersionTLS12}))
+	}
+	traceExporter, err := otlptracehttp.New(ctx, traceOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -170,12 +202,17 @@ func initOtelTracing(ctx context.Context) (func(context.Context) error, error) {
 	traceProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(traceExporter),
 		sdktrace.WithResource(res),
-		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithSampler(envOrDefaultSampler()),
 	)
 
-	// Set global trace provider and propagator
+	// Set global trace provider and composite propagator
 	otel.SetTracerProvider(traceProvider)
-	otel.SetTextMapPropagator(propagation.TraceContext{})
+	otel.SetTextMapPropagator(
+		propagation.NewCompositeTextMapPropagator(
+			propagation.TraceContext{},
+			propagation.Baggage{},
+		),
+	)
 
 	return traceProvider.Shutdown, nil
 }
@@ -184,16 +221,21 @@ func initOtelTracing(ctx context.Context) (func(context.Context) error, error) {
 func initOtelMetrics(ctx context.Context) (func(context.Context) error, error) {
 	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 	if endpoint == "" {
-		log.Fatalf("OTEL_EXPORTER_OTLP_ENDPOINT is not set")
+		return nil, fmt.Errorf("OTEL_EXPORTER_OTLP_ENDPOINT is not set")
 	}
 
 	// Create metrics exporter
-	metricsExporter, err := otlpmetrichttp.New(
-		ctx,
+	insecure := otlpInsecure()
+	metricOpts := []otlpmetrichttp.Option{
 		otlpmetrichttp.WithEndpoint(endpoint),
 		otlpmetrichttp.WithURLPath("/v1/metrics"),
-		otlpmetrichttp.WithInsecure(),
-	)
+	}
+	if insecure {
+		metricOpts = append(metricOpts, otlpmetrichttp.WithInsecure())
+	} else {
+		metricOpts = append(metricOpts, otlpmetrichttp.WithTLSClientConfig(&tls.Config{MinVersion: tls.VersionTLS12}))
+	}
+	metricsExporter, err := otlpmetrichttp.New(ctx, metricOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -226,4 +268,33 @@ func initOtelMetrics(ctx context.Context) (func(context.Context) error, error) {
 	otel.SetMeterProvider(metricsProvider)
 
 	return metricsProvider.Shutdown, nil
+}
+
+// otlpInsecure returns whether to use insecure transport to the OTLP endpoint. Defaults to true.
+func otlpInsecure() bool {
+	v := os.Getenv("OTEL_EXPORTER_OTLP_INSECURE")
+	if v == "" {
+		return true
+	}
+	b, err := strconv.ParseBool(v)
+	if err != nil {
+		return true
+	}
+	return b
+}
+
+// envOrDefaultSampler selects a sampler from env vars or defaults to ParentBased(10%).
+func envOrDefaultSampler() sdktrace.Sampler {
+	if arg := os.Getenv("OTEL_TRACES_SAMPLER_ARG"); arg != "" {
+		if ratio, err := strconv.ParseFloat(arg, 64); err == nil {
+			if ratio < 0 {
+				ratio = 0
+			}
+			if ratio > 1 {
+				ratio = 1
+			}
+			return sdktrace.ParentBased(sdktrace.TraceIDRatioBased(ratio))
+		}
+	}
+	return sdktrace.ParentBased(sdktrace.AlwaysSample())
 }
