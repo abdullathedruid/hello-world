@@ -67,8 +67,7 @@ func TestContextWithRequestID(t *testing.T) {
 	req := httptest.NewRequest("GET", "/", nil)
 	ctx := ContextWithRequestID(req.Context(), requestID)
 
-	// Verify request ID can be retrieved
-	retrievedID := ctx.Value("request_id")
+	retrievedID := ctx.Value(requestIDKey)
 	if retrievedID != requestID {
 		t.Errorf("Expected request ID '%s', got '%v'", requestID, retrievedID)
 	}
